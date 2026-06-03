@@ -1,11 +1,20 @@
 import React, { useState } from "react";
 import { ArrowLeft, X, ArrowRight } from "lucide-react";
 
+const LEAD_SOURCE_OPTIONS = [
+  "Google Search",
+  "Social Media",
+  "Referral",
+  "Walk-in",
+  "Other",
+];
+
 interface CustomerInfoScreenProps {
   initialName: string;
   initialPhone: string;
+  initialLeadSource: string;
   stepText: string;
-  onContinue: (name: string, phone: string) => void;
+  onContinue: (name: string, phone: string, leadSource: string) => void;
   onBack: () => void;
   onClose: () => void;
 }
@@ -13,6 +22,7 @@ interface CustomerInfoScreenProps {
 export default function CustomerInfoScreen({
   initialName,
   initialPhone,
+  initialLeadSource,
   stepText,
   onContinue,
   onBack,
@@ -20,6 +30,7 @@ export default function CustomerInfoScreen({
 }: CustomerInfoScreenProps) {
   const [name, setName] = useState(initialName);
   const [phone, setPhone] = useState(initialPhone);
+  const [leadSource, setLeadSource] = useState(initialLeadSource);
   const [error, setError] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -32,8 +43,12 @@ export default function CustomerInfoScreen({
       setError("Please enter a valid phone number.");
       return;
     }
+    if (!leadSource) {
+      setError("Please let us know how you found us.");
+      return;
+    }
     setError("");
-    onContinue(name, phone);
+    onContinue(name, phone, leadSource);
   };
 
   return (
@@ -118,6 +133,32 @@ export default function CustomerInfoScreen({
                   className="w-full border-b border-[#efe8e6] focus:border-[#80140b] py-3 px-4 outline-none transition-all text-sm bg-[#faf8f6] rounded-t-lg font-medium"
                   required
                 />
+              </div>
+
+              {/* Lead Source Field */}
+              <div className="space-y-1">
+                <label
+                  htmlFor="leadSource"
+                  className="text-[10px] font-bold tracking-wider text-[#5c5a59] uppercase block ml-1"
+                >
+                  How Did You Find Us?
+                </label>
+                <select
+                  id="leadSource"
+                  value={leadSource}
+                  onChange={(e) => setLeadSource(e.target.value)}
+                  className="w-full border-b border-[#efe8e6] focus:border-[#80140b] py-3 px-4 outline-none transition-all text-sm bg-[#faf8f6] rounded-t-lg font-medium appearance-none cursor-pointer text-[#1c1a19]"
+                  required
+                >
+                  <option value="" disabled>
+                    Select an option…
+                  </option>
+                  {LEAD_SOURCE_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Push button to bottom */}

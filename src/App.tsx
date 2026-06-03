@@ -23,6 +23,7 @@ export default function App() {
     timeSlot: null,
     customerName: "",
     customerPhone: "",
+    leadSource: "",
   });
 
   // History list from local storage
@@ -74,11 +75,12 @@ export default function App() {
     setCurrentStep(BookingStep.CustomerInfo);
   };
 
-  const handleCustomerInfoContinue = (name: string, phone: string) => {
+  const handleCustomerInfoContinue = (name: string, phone: string, leadSource: string) => {
     setBooking((prev) => ({
       ...prev,
       customerName: name,
       customerPhone: phone,
+      leadSource,
     }));
     setCurrentStep(BookingStep.StylistSelect);
   };
@@ -115,6 +117,7 @@ export default function App() {
       timeSlot: slot,
       customerName: finalBooking.customerName,
       customerPhone: finalBooking.customerPhone,
+      leadSource: finalBooking.leadSource,
       createdAt: new Date().toISOString(),
     };
 
@@ -181,6 +184,7 @@ export default function App() {
         <CustomerInfoScreen
           initialName={booking.customerName}
           initialPhone={booking.customerPhone}
+          initialLeadSource={booking.leadSource}
           stepText="Step 1 of 3"
           onContinue={handleCustomerInfoContinue}
           onBack={() => setCurrentStep(BookingStep.Landing)}
@@ -233,6 +237,7 @@ export default function App() {
               timeSlot: null,
               customerName: booking.customerName,
               customerPhone: booking.customerPhone,
+              leadSource: booking.leadSource,
             });
             setCurrentStep(BookingStep.Landing);
           }}

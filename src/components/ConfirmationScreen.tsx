@@ -12,6 +12,7 @@ export interface HistoricBooking {
   timeSlot: string;
   customerName: string;
   customerPhone: string;
+  leadSource: string;
   createdAt: string;
 }
 
