@@ -1,0 +1,6 @@
+{
+  "name": "Hair 2000",
+  "description": "Premium online booking application for Hair 2000 Salon.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
