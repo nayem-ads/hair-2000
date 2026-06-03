@@ -134,25 +134,14 @@ export default function App() {
         console.error("Database sync failed, falling back to local client storage:", err);
       });
 
-    // Dispatch conversion tracking events and update URL hash for easier pixel/GTM tracking
-    window.location.hash = "thank-you";
-    window.dispatchEvent(
-      new CustomEvent("booking_confirmed", {
-        detail: {
-          bookingId: newReservation.id,
-          value: newReservation.servicePrice,
-          currency: "USD",
-          service: newReservation.serviceName,
-          stylist: newReservation.stylistName,
-          customerName: newReservation.customerName,
-        },
-      })
-    );
+    // Save last booking to local storage as fallback for thank-you page
+    localStorage.setItem("last_booking", JSON.stringify(newReservation));
 
     const updatedHistory = [newReservation, ...historyList];
     saveHistoryList(updatedHistory);
 
-    setCurrentStep(BookingStep.Confirmation);
+    // Redirect to the dedicated separate thank-you page
+    window.location.href = `/thank-you?id=${newReservation.id}`;
   };
 
   const handleCancelReservation = (id: string) => {

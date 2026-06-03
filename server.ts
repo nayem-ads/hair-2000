@@ -210,6 +210,11 @@ app.delete('/api/bookings/:id', async (req, res) => {
 const distPath = path.join(__dirname, 'dist');
 app.use(express.static(distPath));
 
+// Route to serve thank-you.html directly
+app.get('/thank-you', (req, res) => {
+  res.sendFile(path.join(distPath, 'thank-you.html'));
+});
+
 // Fallback all routes to Index.html for SPA support
 app.get('*', (req, res) => {
   res.sendFile(path.join(distPath, 'index.html'));
