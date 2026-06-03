@@ -27,6 +27,7 @@ export interface BookingState {
   timeSlot: string | null;
   customerName: string;
   customerPhone: string;
+  leadSource: string;
 }
 
 export enum BookingStep {

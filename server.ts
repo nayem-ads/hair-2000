@@ -38,6 +38,7 @@ if (process.env.DATABASE_URL) {
       stylist_role VARCHAR(255) NOT NULL,
       date_str VARCHAR(255) NOT NULL,
       time_slot VARCHAR(255) NOT NULL,
+      lead_source VARCHAR(255),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `).then(() => {
@@ -99,6 +100,7 @@ app.get('/api/bookings', async (req, res) => {
         stylistRole: row.stylist_role,
         dateStr: row.date_str,
         timeSlot: row.time_slot,
+        leadSource: row.lead_source || "",
         createdAt: row.created_at
       }));
       return res.json(formatted);
@@ -123,6 +125,7 @@ app.post('/api/bookings', async (req, res) => {
     stylistRole,
     dateStr,
     timeSlot,
+    leadSource,
   } = req.body;
 
   if (!customerName || !customerPhone || !serviceName || !stylistName || !dateStr || !timeSlot) {
@@ -139,15 +142,14 @@ app.post('/api/bookings', async (req, res) => {
     stylistRole,
     dateStr,
     timeSlot,
+    leadSource: leadSource || "",
     createdAt: new Date().toISOString(),
   };
 
   try {
     if (pool) {
       await pool.query(
-        `INSERT INTO bookings 
-         (id, customer_name, customer_phone, service_name, service_price, stylist_name, stylist_role, date_str, time_slot, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        `INSERT INTO bookings \n         (id, customer_name, customer_phone, service_name, service_price, stylist_name, stylist_role, date_str, time_slot, lead_source, created_at)\n         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
         [
           newBooking.id,
           newBooking.customerName,
@@ -158,6 +160,7 @@ app.post('/api/bookings', async (req, res) => {
           newBooking.stylistRole,
           newBooking.dateStr,
           newBooking.timeSlot,
+          newBooking.leadSource,
           newBooking.createdAt
         ]
       );
