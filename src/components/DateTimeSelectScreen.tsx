@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { ArrowLeft, X, Edit2, ChevronLeft, ChevronRight, Sun, Sunset, ArrowRight, User } from "lucide-react";
-import { Service, Stylist, TimeSlot } from "../types";
-import { TIME_SLOTS } from "../data";
+import { Service, Stylist } from "../types";
 
 interface DateTimeSelectScreenProps {
   selectedService: Service | null;
@@ -26,7 +25,9 @@ export default function DateTimeSelectScreen({
   const [currentYear, setCurrentYear] = useState(2026);
   const [currentMonth, setCurrentMonth] = useState(5); // June (0-indexed is 5)
   const [selectedDay, setSelectedDay] = useState(3); // Start with today, June 3rd
-  const [selectedTime, setSelectedTime] = useState<string | null>("11:00 AM");
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [slotsByDate, setSlotsByDate] = useState<Record<string, { slots: string[] }>>({});
+  const [loading, setLoading] = useState(false);
 
   const monthNames = [
     "January", "February", "March", "April", "May", "June",
@@ -34,6 +35,7 @@ export default function DateTimeSelectScreen({
   ];
 
   const daysOfWeek = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+  const dotDays = [11, 15, 18];
 
   // Helper to generate days in current month
   const getDaysInMonth = (year: number, month: number) => {
@@ -70,12 +72,88 @@ export default function DateTimeSelectScreen({
 
   const handleDaySelect = (dayNum: number) => {
     setSelectedDay(dayNum);
+    const formattedDate = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
+    const daySlots = slotsByDate[formattedDate]?.slots || [];
+    if (daySlots.length > 0) {
+      setSelectedTime(daySlots[0]);
+    } else {
+      setSelectedTime(null);
+    }
   };
 
   const handleConfirm = () => {
     if (selectedTime) {
       const targetDate = new Date(currentYear, currentMonth, selectedDay);
       onConfirm(targetDate, selectedTime);
+    }
+  };
+
+  // Fetch slots from GoHighLevel proxy endpoint
+  React.useEffect(() => {
+    if (!selectedService) return;
+
+    // Map service to GHL calendarId
+    const serviceToCalendarMap: Record<string, string> = {
+      "mens-cut": "HdpJwaZsoHDAOG3fn3VV",
+      "womens-cut": "f5ofJYfNovH7NH3AQOJF",
+      "color": "AKGVsNGC8VME87ZAwwAH",
+      "shampoo-haircut": "HdpJwaZsoHDAOG3fn3VV",
+      "shampoo-set": "HdpJwaZsoHDAOG3fn3VV",
+      "highlights": "AKGVsNGC8VME87ZAwwAH",
+    };
+    const calendarId = serviceToCalendarMap[selectedService.id] || "HdpJwaZsoHDAOG3fn3VV";
+
+    // Map stylist to GHL userId
+    const stylistToUserMap: Record<string, string> = {
+      "amy": "fpKRyPPF3LiqtOcPUpzH",
+      "jan": "x0aX48kKnxlVJsKZGFvI",
+      "mai": "FlWwhX8WMGwJ1wZmfVJr",
+      "ratchanee": "etpPCuCDmIrhZ5KBIv66",
+    };
+    const userId = selectedStylist ? stylistToUserMap[selectedStylist.id] : undefined;
+
+    const startTimestamp = new Date(currentYear, currentMonth, 1, 0, 0, 0).getTime();
+    const endTimestamp = new Date(currentYear, currentMonth, getDaysInMonth(currentYear, currentMonth), 23, 59, 59).getTime();
+
+    setLoading(true);
+    let url = `/api/ghl/free-slots?calendarId=${calendarId}&startDate=${startTimestamp}&endDate=${endTimestamp}`;
+    if (userId) {
+      url += `&userId=${userId}`;
+    }
+
+    fetch(url)
+      .then((res) => res.json())
+      .then((data) => {
+        const { traceId, ...slots } = data;
+        setSlotsByDate(slots);
+        setLoading(false);
+
+        // Auto-select first slot of selected day
+        const formattedDate = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(selectedDay).padStart(2, "0")}`;
+        const daySlots = slots[formattedDate]?.slots || [];
+        if (daySlots.length > 0) {
+          setSelectedTime(daySlots[0]);
+        } else {
+          setSelectedTime(null);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch GHL slots:", err);
+        setLoading(false);
+      });
+  }, [currentMonth, currentYear, selectedService, selectedStylist]);
+
+  // Helper to format ISO slot string to 12-hour format
+  const formatSlotTime = (isoString: string) => {
+    try {
+      const date = new Date(isoString);
+      return date.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+    } catch (e) {
+      return isoString;
     }
   };
 
@@ -88,11 +166,18 @@ export default function DateTimeSelectScreen({
     calendarDays.push(d);
   }
 
-  // Define dot indicators to match styling from image (e.g. Day 11 and Day 15 have red dots)
-  const dotDays = [11, 15, 18];
+  const formattedDate = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(selectedDay).padStart(2, "0")}`;
+  const daySlots = slotsByDate[formattedDate]?.slots || [];
 
-  const morningSlots = TIME_SLOTS.filter((s) => s.period === "morning");
-  const afternoonSlots = TIME_SLOTS.filter((s) => s.period === "afternoon");
+  const morningSlots = daySlots.filter((slotStr) => {
+    const date = new Date(slotStr);
+    return date.getHours() < 12;
+  });
+
+  const afternoonSlots = daySlots.filter((slotStr) => {
+    const date = new Date(slotStr);
+    return date.getHours() >= 12;
+  });
 
   return (
     <div className="bg-[#faf8f6] min-h-screen flex flex-col justify-between text-[#1c1a19]">
@@ -227,63 +312,73 @@ export default function DateTimeSelectScreen({
           <div className="space-y-2 pt-1">
             <h3 className="font-bold text-xs tracking-tight text-[#1c1a19]">Available Times</h3>
 
-            {/* Morning Times */}
-            <div className="space-y-1">
-              <div className="flex items-center gap-1 text-[10px] text-[#5c5a59] uppercase tracking-wider font-extrabold">
-                <Sun className="w-3.5 h-3.5 text-[#80140b]" />
-                <span>Morning</span>
+            {loading ? (
+              <div className="text-center py-6 text-xs text-[#5c5a59] font-medium animate-pulse">
+                Loading available times...
               </div>
-              <div className="grid grid-cols-4 gap-1.5">
-                {morningSlots.map((slot) => {
-                  const isSelected = selectedTime === slot.time;
-                  return (
-                    <button
-                      key={slot.time}
-                      disabled={!slot.isAvailable}
-                      onClick={() => setSelectedTime(slot.time)}
-                      className={`py-2 px-1 rounded-lg border text-[11px] font-bold text-center transition-all ${
-                        !slot.isAvailable
-                          ? "bg-gray-50 border-gray-100 text-gray-300 line-through cursor-not-allowed"
-                          : isSelected
-                          ? "border-[#80140b] text-[#80140b] bg-[#fdfaf9] font-extrabold ring-1 ring-[#80140b]"
-                          : "border-[#efe8e6] text-[#1c1a19] bg-[#faf8f6] hover:border-gray-300"
-                      }`}
-                    >
-                      {slot.time}
-                    </button>
-                  );
-                })}
+            ) : daySlots.length === 0 ? (
+              <div className="text-center py-6 text-xs text-red-500 font-medium bg-red-50/50 rounded-xl border border-red-100">
+                No slots available on this date.
               </div>
-            </div>
+            ) : (
+              <>
+                {/* Morning Times */}
+                {morningSlots.length > 0 && (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1 text-[10px] text-[#5c5a59] uppercase tracking-wider font-extrabold">
+                      <Sun className="w-3.5 h-3.5 text-[#80140b]" />
+                      <span>Morning</span>
+                    </div>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {morningSlots.map((slot) => {
+                        const isSelected = selectedTime === slot;
+                        return (
+                          <button
+                            key={slot}
+                            onClick={() => setSelectedTime(slot)}
+                            className={`py-2 px-1 rounded-lg border text-[11px] font-bold text-center transition-all ${
+                              isSelected
+                                ? "border-[#80140b] text-[#80140b] bg-[#fdfaf9] font-extrabold ring-1 ring-[#80140b]"
+                                : "border-[#efe8e6] text-[#1c1a19] bg-[#faf8f6] hover:border-gray-300"
+                            }`}
+                          >
+                            {formatSlotTime(slot)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
-            {/* Afternoon Times */}
-            <div className="space-y-1 pt-1">
-              <div className="flex items-center gap-1 text-[10px] text-[#5c5a59] uppercase tracking-wider font-extrabold">
-                <Sunset className="w-3.5 h-3.5 text-[#80140b]" />
-                <span>Afternoon</span>
-              </div>
-              <div className="grid grid-cols-4 gap-1.5">
-                {afternoonSlots.map((slot) => {
-                  const isSelected = selectedTime === slot.time;
-                  return (
-                    <button
-                      key={slot.time}
-                      disabled={!slot.isAvailable}
-                      onClick={() => setSelectedTime(slot.time)}
-                      className={`py-2 px-1 rounded-lg border text-[11px] font-bold text-center transition-all ${
-                        !slot.isAvailable
-                          ? "bg-gray-50 border-gray-100 text-gray-300 line-through cursor-not-allowed"
-                          : isSelected
-                          ? "border-[#80140b] text-[#80140b] bg-[#fdfaf9] font-extrabold ring-1 ring-[#80140b]"
-                          : "border-[#efe8e6] text-[#1c1a19] bg-[#faf8f6] hover:border-gray-300"
-                      }`}
-                    >
-                      {slot.time}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+                {/* Afternoon Times */}
+                {afternoonSlots.length > 0 && (
+                  <div className="space-y-1 pt-1">
+                    <div className="flex items-center gap-1 text-[10px] text-[#5c5a59] uppercase tracking-wider font-extrabold">
+                      <Sunset className="w-3.5 h-3.5 text-[#80140b]" />
+                      <span>Afternoon</span>
+                    </div>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {afternoonSlots.map((slot) => {
+                        const isSelected = selectedTime === slot;
+                        return (
+                          <button
+                            key={slot}
+                            onClick={() => setSelectedTime(slot)}
+                            className={`py-2 px-1 rounded-lg border text-[11px] font-bold text-center transition-all ${
+                              isSelected
+                                ? "border-[#80140b] text-[#80140b] bg-[#fdfaf9] font-extrabold ring-1 ring-[#80140b]"
+                                : "border-[#efe8e6] text-[#1c1a19] bg-[#faf8f6] hover:border-gray-300"
+                            }`}
+                          >
+                            {formatSlotTime(slot)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </main>
 

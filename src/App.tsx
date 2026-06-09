@@ -107,56 +107,85 @@ export default function App() {
   };
 
   const handleDateTimeConfirm = (date: Date, slot: string) => {
+    // Map service to GHL calendarId
+    const serviceToCalendarMap: Record<string, string> = {
+      "mens-cut": "HdpJwaZsoHDAOG3fn3VV",
+      "womens-cut": "f5ofJYfNovH7NH3AQOJF",
+      "color": "AKGVsNGC8VME87ZAwwAH",
+      "shampoo-haircut": "HdpJwaZsoHDAOG3fn3VV",
+      "shampoo-set": "HdpJwaZsoHDAOG3fn3VV",
+      "highlights": "AKGVsNGC8VME87ZAwwAH",
+    };
+    const calendarId = booking.service ? serviceToCalendarMap[booking.service.id] : "HdpJwaZsoHDAOG3fn3VV";
+
+    // Map stylist to GHL userId
+    const stylistToUserMap: Record<string, string> = {
+      "amy": "fpKRyPPF3LiqtOcPUpzH",
+      "jan": "x0aX48kKnxlVJsKZGFvI",
+      "mai": "FlWwhX8WMGwJ1wZmfVJr",
+      "ratchanee": "etpPCuCDmIrhZ5KBIv66",
+    };
+    const userId = booking.stylist ? stylistToUserMap[booking.stylist.id] : undefined;
+
+    const humanTime = new Date(slot).toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+    const humanDateStr = date.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+
     const finalBooking = {
       ...booking,
       date,
-      timeSlot: slot,
+      timeSlot: humanTime,
     };
     setBooking(finalBooking);
 
-    // Persist to local storage database checkouts
-    const newReservation: HistoricBooking = {
-      id: Math.random().toString(36).substr(2, 9),
-      serviceName: finalBooking.service?.name || "Premium Cut",
-      servicePrice: finalBooking.service?.price || 32,
-      stylistName: finalBooking.stylist?.name || "First Available",
-      stylistRole: finalBooking.stylist?.role || "Hair Expert",
-      dateStr: date.toLocaleDateString("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }),
-      timeSlot: slot,
-      customerName: finalBooking.customerName,
-      customerPhone: finalBooking.customerPhone,
-      createdAt: new Date().toISOString(),
-    };
-
-    // Send POST to server database API
-    fetch("/api/bookings", {
+    // Send booking to GoHighLevel proxy endpoint
+    fetch("/api/ghl/bookings", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(newReservation),
+      body: JSON.stringify({
+        calendarId,
+        startTime: slot,
+        customerName: booking.customerName,
+        customerPhone: booking.customerPhone,
+        userId,
+        serviceName: booking.service?.name || "Premium Cut",
+        servicePrice: booking.service?.price || 32,
+        stylistName: booking.stylist?.name || "First Available",
+        stylistRole: booking.stylist?.role || "Hair Expert",
+        dateStr: humanDateStr,
+        timeSlot: humanTime
+      }),
     })
       .then((res) => {
-        if (!res.ok) throw new Error("Failed to sync to database");
-        console.log("Booking successfully synchronized to server database.");
+        if (!res.ok) throw new Error("GHL booking request failed");
+        return res.json();
+      })
+      .then((newReservation) => {
+        console.log("Successfully created GHL booking:", newReservation);
+        // Save last booking to local storage as fallback for thank-you page
+        localStorage.setItem("last_booking", JSON.stringify(newReservation));
+
+        const updatedHistory = [newReservation, ...historyList];
+        saveHistoryList(updatedHistory);
+
+        // Redirect to the dedicated separate thank-you page
+        window.location.href = `/thank-you?id=${newReservation.id}`;
       })
       .catch((err) => {
-        console.error("Database sync failed, falling back to local client storage:", err);
+        console.error("GHL booking failed:", err);
+        alert("GHL Booking failed. Please try again.");
       });
-
-    // Save last booking to local storage as fallback for thank-you page
-    localStorage.setItem("last_booking", JSON.stringify(newReservation));
-
-    const updatedHistory = [newReservation, ...historyList];
-    saveHistoryList(updatedHistory);
-
-    // Redirect to the dedicated separate thank-you page
-    window.location.href = `/thank-you?id=${newReservation.id}`;
   };
 
   const handleCancelReservation = (id: string) => {

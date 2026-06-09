@@ -68,6 +68,143 @@ var sendToZapier = async (booking) => {
     console.error("Failed to dispatch booking to Zapier webhook:", error);
   }
 };
+app.get("/api/ghl/free-slots", async (req, res) => {
+  const { calendarId, startDate, endDate, userId } = req.query;
+  if (!calendarId || !startDate || !endDate) {
+    return res.status(400).json({ error: "Missing required query parameters calendarId, startDate, or endDate." });
+  }
+  const token = process.env.GHL_TOKEN || "pit-222fd3b0-718a-490f-ba7d-2594c1b7396c";
+  let url = `https://services.leadconnectorhq.com/calendars/${calendarId}/free-slots?startDate=${startDate}&endDate=${endDate}`;
+  if (userId) {
+    url += `&userId=${userId}`;
+  }
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Version": "2021-07-28",
+        "Accept": "application/json"
+      }
+    });
+    const data = await response.json();
+    return res.status(response.status).json(data);
+  } catch (error) {
+    console.error("Error fetching GHL slots:", error);
+    return res.status(500).json({ error: "Failed to fetch free slots from GoHighLevel." });
+  }
+});
+app.post("/api/ghl/bookings", async (req, res) => {
+  const {
+    calendarId,
+    startTime,
+    customerName,
+    customerPhone,
+    userId,
+    serviceName,
+    servicePrice,
+    stylistName,
+    stylistRole,
+    dateStr,
+    timeSlot
+  } = req.body;
+  if (!calendarId || !startTime || !customerName || !customerPhone) {
+    return res.status(400).json({ error: "Missing required booking details." });
+  }
+  const token = process.env.GHL_TOKEN || "pit-222fd3b0-718a-490f-ba7d-2594c1b7396c";
+  const locationId = "BzlIzxBih6N3hAKXGiVi";
+  try {
+    console.log(`Upserting GHL contact for: ${customerName} (${customerPhone})`);
+    const contactRes = await fetch("https://services.leadconnectorhq.com/contacts/upsert", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Version": "2021-07-28",
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify({
+        locationId,
+        firstName: customerName,
+        phone: customerPhone
+      })
+    });
+    if (!contactRes.ok) {
+      const errorData = await contactRes.json();
+      console.error("Failed to upsert GHL contact:", errorData);
+      return res.status(contactRes.status).json({ error: "Failed to upsert GoHighLevel contact.", details: errorData });
+    }
+    const contactData = await contactRes.json();
+    const contactId = contactData.contact.id;
+    console.log(`Successfully upserted GHL contact. ID: ${contactId}`);
+    console.log(`Booking GHL appointment on calendar ${calendarId} for contact ${contactId} at ${startTime}`);
+    const appointmentRes = await fetch("https://services.leadconnectorhq.com/calendars/events/appointments", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Version": "2021-07-28",
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify({
+        calendarId,
+        locationId,
+        contactId,
+        startTime,
+        selectedTimezone: "America/Los_Angeles",
+        assignedUserId: userId || void 0
+      })
+    });
+    if (!appointmentRes.ok) {
+      const errorData = await appointmentRes.json();
+      console.error("Failed to book GHL appointment:", errorData);
+      return res.status(appointmentRes.status).json({ error: "Failed to book GoHighLevel appointment.", details: errorData });
+    }
+    const appointmentData = await appointmentRes.json();
+    console.log(`Successfully booked GHL appointment. ID: ${appointmentData.id}`);
+    const localId = appointmentData.id || Math.random().toString(36).substring(2, 11);
+    const newBooking = {
+      id: localId,
+      customerName,
+      customerPhone,
+      serviceName: serviceName || "Hair Treatment",
+      servicePrice: Number(servicePrice) || 0,
+      stylistName: stylistName || "First Available",
+      stylistRole: stylistRole || "Hair Expert",
+      dateStr: dateStr || new Date(startTime).toLocaleDateString(),
+      timeSlot: timeSlot || new Date(startTime).toLocaleTimeString(),
+      createdAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    if (pool) {
+      await pool.query(
+        `INSERT INTO bookings 
+         (id, customer_name, customer_phone, service_name, service_price, stylist_name, stylist_role, date_str, time_slot, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        [
+          newBooking.id,
+          newBooking.customerName,
+          newBooking.customerPhone,
+          newBooking.serviceName,
+          newBooking.servicePrice,
+          newBooking.stylistName,
+          newBooking.stylistRole,
+          newBooking.dateStr,
+          newBooking.timeSlot,
+          newBooking.createdAt
+        ]
+      );
+      console.log(`Booking ${newBooking.id} saved to PostgreSQL.`);
+    } else {
+      fallbackBookings = [newBooking, ...fallbackBookings];
+      console.log(`Booking ${newBooking.id} saved to memory.`);
+    }
+    sendToZapier(newBooking);
+    return res.status(201).json(newBooking);
+  } catch (error) {
+    console.error("Error in GHL booking execution flow:", error);
+    return res.status(500).json({ error: "GHL booking execution flow failed." });
+  }
+});
 app.get("/api/bookings", async (req, res) => {
   try {
     if (pool) {
