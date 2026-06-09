@@ -82,6 +82,75 @@ const sendToZapier = async (booking: any) => {
   }
 };
 
+// Resend Email Notification Helper
+const sendEmailNotification = async (booking: any) => {
+  const resendApiKey = process.env.RESEND_API_KEY || 're_GoVseCMG_DWz7C7xou5EdYjGB8NtVaUrq';
+  if (!resendApiKey) {
+    console.log('RESEND_API_KEY is not set. Skipping email notification.');
+    return;
+  }
+
+  const emailHtml = `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #efe8e6; border-radius: 12px; background-color: #faf8f6;">
+      <h2 style="color: #80140b; font-family: serif; border-bottom: 2px solid #80140b; padding-bottom: 10px; margin-top: 0;">New Booking Confirmed!</h2>
+      <p style="font-size: 14px; color: #1c1a19;">A new appointment has been scheduled and booked successfully.</p>
+      
+      <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+        <tr style="background-color: #ffffff; border-bottom: 1px solid #efe8e6;">
+          <td style="padding: 10px; font-weight: bold; font-size: 12px; color: #5c5a59; text-transform: uppercase;">Customer Name</td>
+          <td style="padding: 10px; font-size: 14px; color: #1c1a19; text-align: right;">${booking.customerName}</td>
+        </tr>
+        <tr style="background-color: #ffffff; border-bottom: 1px solid #efe8e6;">
+          <td style="padding: 10px; font-weight: bold; font-size: 12px; color: #5c5a59; text-transform: uppercase;">Customer Phone</td>
+          <td style="padding: 10px; font-size: 14px; color: #1c1a19; text-align: right;"><a href="tel:${booking.customerPhone}" style="color: #80140b; text-decoration: none;">${booking.customerPhone}</a></td>
+        </tr>
+        <tr style="background-color: #ffffff; border-bottom: 1px solid #efe8e6;">
+          <td style="padding: 10px; font-weight: bold; font-size: 12px; color: #5c5a59; text-transform: uppercase;">Service</td>
+          <td style="padding: 10px; font-size: 14px; color: #1c1a19; text-align: right;">${booking.serviceName} ($${booking.servicePrice})</td>
+        </tr>
+        <tr style="background-color: #ffffff; border-bottom: 1px solid #efe8e6;">
+          <td style="padding: 10px; font-weight: bold; font-size: 12px; color: #5c5a59; text-transform: uppercase;">Stylist</td>
+          <td style="padding: 10px; font-size: 14px; color: #1c1a19; text-align: right;">${booking.stylistName} (${booking.stylistRole})</td>
+        </tr>
+        <tr style="background-color: #ffffff; border-bottom: 1px solid #efe8e6;">
+          <td style="padding: 10px; font-weight: bold; font-size: 12px; color: #5c5a59; text-transform: uppercase;">Date & Time</td>
+          <td style="padding: 10px; font-size: 14px; color: #1c1a19; text-align: right;"><strong>${booking.dateStr} @ ${booking.timeSlot}</strong></td>
+        </tr>
+      </table>
+      
+      <div style="margin-top: 30px; text-align: center; font-size: 10px; color: #7d7977;">
+        <p>© Hair 2000. All rights reserved.</p>
+      </div>
+    </div>
+  `;
+
+  try {
+    console.log(`Sending booking notification email to Resend...`);
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'Hair 2000 <onboarding@resend.dev>',
+        to: ['admin@velociholdings.com', 'nayem.adsmanager@gmail.com'],
+        subject: `New Booking: ${booking.customerName} - ${booking.serviceName}`,
+        html: emailHtml,
+      }),
+    });
+
+    if (response.ok) {
+      console.log('Resend email notification dispatched successfully.');
+    } else {
+      const errData = await response.json();
+      console.error('Resend email failed:', errData);
+    }
+  } catch (error) {
+    console.error('Failed to send Resend email:', error);
+  }
+};
+
 // --- API ROUTES ---
 
 // GET: Fetch free slots from GoHighLevel calendar
@@ -235,8 +304,9 @@ app.post('/api/ghl/bookings', async (req, res) => {
       console.log(`Booking ${newBooking.id} saved to memory.`);
     }
 
-    // Trigger Zapier Webhook asynchronously
+    // Trigger Zapier Webhook and Resend Email notification asynchronously
     sendToZapier(newBooking);
+    sendEmailNotification(newBooking);
 
     return res.status(201).json(newBooking);
   } catch (error) {
@@ -328,8 +398,9 @@ app.post('/api/bookings', async (req, res) => {
       console.log(`Booking ${newBooking.id} saved to memory.`);
     }
 
-    // Trigger Zapier Webhook asynchronously
+    // Trigger Zapier Webhook and Resend Email notification asynchronously
     sendToZapier(newBooking);
+    sendEmailNotification(newBooking);
 
     return res.status(201).json(newBooking);
   } catch (error) {
