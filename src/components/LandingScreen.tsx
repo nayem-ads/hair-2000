@@ -21,15 +21,24 @@ export default function LandingScreen({ onStartBooking, onViewBookings, bookingC
               HAIR 2000
             </span>
           </div>
-          {bookingCount > 0 && (
-            <button
-              onClick={onViewBookings}
-              className="flex items-center gap-1 bg-[#ffdad5] text-[#80140b] px-3 py-1.5 rounded-full text-xs font-bold hover:bg-[#ffe5e1] transition-colors"
+          <div className="flex items-center gap-2">
+            <a
+              href="tel:415-917-4943"
+              className="flex items-center gap-1.5 text-[10px] font-black text-[#80140b] bg-[#ffdad5]/40 px-2.5 py-1.5 rounded-full hover:bg-[#ffdad5]/60 transition-colors uppercase tracking-wider"
             >
-              <CalendarCheck className="w-4 h-4" />
-              My Bookings ({bookingCount})
-            </button>
-          )}
+              <Phone className="w-3.5 h-3.5" />
+              <span>Call</span>
+            </a>
+            {bookingCount > 0 && (
+              <button
+                onClick={onViewBookings}
+                className="flex items-center gap-1 bg-[#ffdad5] text-[#80140b] px-3 py-1.5 rounded-full text-xs font-bold hover:bg-[#ffe5e1] transition-colors"
+              >
+                <CalendarCheck className="w-4 h-4" />
+                My Bookings ({bookingCount})
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -160,11 +169,17 @@ export default function LandingScreen({ onStartBooking, onViewBookings, bookingC
         </section>
 
         {/* Footer info */}
-        <footer className="pt-2 text-center text-[#7d7977] space-y-1">
+        <footer className="pt-2 text-center text-[#7d7977] space-y-2 pb-6">
           <div className="flex items-center justify-center gap-1.5">
             <Scissors className="w-3.5 h-3.5 opacity-60" />
             <span className="text-[9px] font-bold tracking-[0.2em] uppercase">HAIR 2000 • EST. 1991</span>
           </div>
+          <p className="text-xs font-bold text-[#80140b] tracking-wide">
+            Questions? Call us at{" "}
+            <a href="tel:415-917-4943" className="underline hover:text-[#680f08] transition-colors font-extrabold">
+              415-917-4943
+            </a>
+          </p>
           <p className="text-[9px] opacity-75">All appointments include our dynamic hospitality treatments.</p>
         </footer>
       </div>
@@ -173,7 +188,7 @@ export default function LandingScreen({ onStartBooking, onViewBookings, bookingC
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-[#efe8e6] py-3.5 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
         <div className="max-w-[480px] mx-auto px-4 grid grid-cols-2 gap-3">
           <a
-            href="tel:+15550002000"
+            href="tel:415-917-4943"
             className="flex items-center justify-center gap-2 border-2 border-[#80140b] text-[#80140b] hover:bg-[#ffdad5]/20 h-12 rounded-full font-bold transition-all text-xs tracking-wider uppercase active:scale-[0.98]"
           >
             <Phone className="w-4 h-4" />
