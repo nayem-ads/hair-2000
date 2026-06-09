@@ -114,6 +114,15 @@ function ThankYouPage() {
         },
       })
     );
+
+    // Dispatch standard Meta Pixel conversion tracking event (Lead)
+    if (typeof (window as any).fbq === "function") {
+      (window as any).fbq("track", "Lead", {
+        content_name: hist.serviceName,
+        value: hist.servicePrice,
+        currency: "USD",
+      });
+    }
   };
 
   const handleCancelBooking = (id: string) => {
