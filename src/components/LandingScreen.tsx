@@ -1,7 +1,7 @@
 import React from "react";
 import { Service } from "../types";
 import { SERVICES } from "../data";
-import { Scissors, Star, Flame, Award, Gift, Coffee, GlassWater, Trophy, ChevronRight, CalendarCheck } from "lucide-react";
+import { Scissors, Star, Flame, Award, Gift, Coffee, GlassWater, Trophy, ChevronRight, CalendarCheck, Phone, Calendar } from "lucide-react";
 
 interface LandingScreenProps {
   onStartBooking: (initialService?: Service) => void;
@@ -170,14 +170,22 @@ export default function LandingScreen({ onStartBooking, onViewBookings, bookingC
       </div>
 
       {/* Sticky Bottom booking trigger bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#80140b] text-white py-3.5 shadow-[0_-4px_12px_rgba(128,20,11,0.15)] hover:brightness-110 active:scale-[0.98] transition-all text-center cursor-pointer">
-        <div
-          onClick={() => onStartBooking()}
-          className="max-w-[480px] mx-auto px-4 flex items-center justify-center gap-2 uppercase tracking-widest font-bold text-xs"
-        >
-          <span className="text-sm">📅</span>
-          <span>Book Now</span>
-          <ChevronRight className="w-4 h-4" />
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-[#efe8e6] py-3.5 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+        <div className="max-w-[480px] mx-auto px-4 grid grid-cols-2 gap-3">
+          <a
+            href="tel:+15550002000"
+            className="flex items-center justify-center gap-2 border-2 border-[#80140b] text-[#80140b] hover:bg-[#ffdad5]/20 h-12 rounded-full font-bold transition-all text-xs tracking-wider uppercase active:scale-[0.98]"
+          >
+            <Phone className="w-4 h-4" />
+            <span>Call Now</span>
+          </a>
+          <button
+            onClick={() => onStartBooking()}
+            className="flex items-center justify-center gap-2 bg-[#80140b] text-white hover:bg-[#680f08] h-12 rounded-full font-bold transition-all text-xs tracking-wider uppercase active:scale-[0.98] shadow-md border-2 border-[#80140b]"
+          >
+            <Calendar className="w-4 h-4" />
+            <span>Book Now</span>
+          </button>
         </div>
       </nav>
     </div>

@@ -32,6 +32,7 @@ export interface BookingState {
 export enum BookingStep {
   Landing = "landing",
   CustomerInfo = "customer_info",
+  ServiceSelect = "service_select",
   StylistSelect = "stylist_select",
   DateTimeSelect = "date_time",
   Confirmation = "confirmation",

@@ -8,12 +8,14 @@ import { BookingStep, Service, Stylist, BookingState } from "./types";
 import { SERVICES, STYLISTS } from "./data";
 import LandingScreen from "./components/LandingScreen";
 import CustomerInfoScreen from "./components/CustomerInfoScreen";
+import ServiceSelectScreen from "./components/ServiceSelectScreen";
 import StylistSelectScreen from "./components/StylistSelectScreen";
 import DateTimeSelectScreen from "./components/DateTimeSelectScreen";
 import ConfirmationScreen, { HistoricBooking } from "./components/ConfirmationScreen";
 
 export default function App() {
   const [currentStep, setCurrentStep] = useState<BookingStep>(BookingStep.Landing);
+  const [isServicePreselected, setIsServicePreselected] = useState<boolean>(false);
 
   // Core Booking wizard state
   const [booking, setBooking] = useState<BookingState>({
@@ -63,8 +65,9 @@ export default function App() {
   };
 
   const handleStartBooking = (initialService?: Service) => {
+    setIsServicePreselected(!!initialService);
     setBooking({
-      service: initialService || SERVICES[0], // Default to Men's Cut if nothing selected
+      service: initialService || null, // null if they need to choose in the flow
       stylist: STYLISTS[0], // Default to first available
       date: new Date(2026, 5, 3), // Default to June 3, 2026
       timeSlot: "11:00 AM", // Start with 11:00 AM as selected in mockups
@@ -79,6 +82,18 @@ export default function App() {
       ...prev,
       customerName: name,
       customerPhone: phone,
+    }));
+    if (isServicePreselected) {
+      setCurrentStep(BookingStep.StylistSelect);
+    } else {
+      setCurrentStep(BookingStep.ServiceSelect);
+    }
+  };
+
+  const handleServiceSelect = (selected: Service) => {
+    setBooking((prev) => ({
+      ...prev,
+      service: selected,
     }));
     setCurrentStep(BookingStep.StylistSelect);
   };
@@ -181,9 +196,19 @@ export default function App() {
         <CustomerInfoScreen
           initialName={booking.customerName}
           initialPhone={booking.customerPhone}
-          stepText="Step 1 of 3"
+          stepText={isServicePreselected ? "Step 1 of 3" : "Step 1 of 4"}
           onContinue={handleCustomerInfoContinue}
           onBack={() => setCurrentStep(BookingStep.Landing)}
+          onClose={handleCloseOrReset}
+        />
+      )}
+
+      {currentStep === BookingStep.ServiceSelect && (
+        <ServiceSelectScreen
+          selectedService={booking.service}
+          stepText="Step 2 of 4"
+          onSelect={handleServiceSelect}
+          onBack={() => setCurrentStep(BookingStep.CustomerInfo)}
           onClose={handleCloseOrReset}
         />
       )}
@@ -191,9 +216,9 @@ export default function App() {
       {currentStep === BookingStep.StylistSelect && (
         <StylistSelectScreen
           selectedStylist={booking.stylist}
-          stepText="Step 2 of 3"
+          stepText={isServicePreselected ? "Step 2 of 3" : "Step 3 of 4"}
           onSelect={handleStylistSelect}
-          onBack={() => setCurrentStep(BookingStep.CustomerInfo)}
+          onBack={() => setCurrentStep(isServicePreselected ? BookingStep.CustomerInfo : BookingStep.ServiceSelect)}
         />
       )}
 
@@ -201,7 +226,7 @@ export default function App() {
         <DateTimeSelectScreen
           selectedService={booking.service}
           selectedStylist={booking.stylist}
-          stepText="Step 3 of 3"
+          stepText={isServicePreselected ? "Step 3 of 3" : "Step 4 of 4"}
           onConfirm={handleDateTimeConfirm}
           onBack={() => setCurrentStep(BookingStep.StylistSelect)}
           onClose={handleCloseOrReset}
