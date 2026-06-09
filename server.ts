@@ -125,7 +125,14 @@ const sendEmailNotification = async (booking: any) => {
   `;
 
   try {
-    console.log(`Sending booking notification email to Resend...`);
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'Hair 2000 <onboarding@resend.dev>';
+    
+    // Resend sandbox constraint: if sending from onboarding@resend.dev, we can only send to the registered owner (nayem.adsmanager@gmail.com)
+    const toEmails = fromEmail.includes('onboarding@resend.dev') 
+      ? ['nayem.adsmanager@gmail.com'] 
+      : ['admin@velociholdings.com', 'nayem.adsmanager@gmail.com'];
+
+    console.log(`Sending booking notification email to Resend... (From: ${fromEmail}, To: ${toEmails.join(', ')})`);
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -133,8 +140,8 @@ const sendEmailNotification = async (booking: any) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Hair 2000 <onboarding@resend.dev>',
-        to: ['admin@velociholdings.com', 'nayem.adsmanager@gmail.com'],
+        from: fromEmail,
+        to: toEmails,
         subject: `New Booking: ${booking.customerName} - ${booking.serviceName}`,
         html: emailHtml,
       }),
