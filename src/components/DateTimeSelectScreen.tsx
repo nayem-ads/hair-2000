@@ -22,9 +22,16 @@ export default function DateTimeSelectScreen({
   onChangeStylist,
 }: DateTimeSelectScreenProps) {
   // Current time is June 3, 2026
-  const [currentYear, setCurrentYear] = useState(2026);
-  const [currentMonth, setCurrentMonth] = useState(5); // June (0-indexed is 5)
-  const [selectedDay, setSelectedDay] = useState(3); // Start with today, June 3rd
+  // Get current date in America/Los_Angeles timezone
+  const getLADate = () => {
+    const laString = new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
+    return new Date(laString);
+  };
+  const laToday = getLADate();
+
+  const [currentYear, setCurrentYear] = useState(laToday.getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(laToday.getMonth());
+  const [selectedDay, setSelectedDay] = useState(laToday.getDate());
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [slotsByDate, setSlotsByDate] = useState<Record<string, { slots: string[] }>>({});
   const [loading, setLoading] = useState(false);
@@ -252,7 +259,12 @@ export default function DateTimeSelectScreen({
               <div className="flex items-center gap-1">
                 <button
                   onClick={prevMonth}
-                  className="w-7 h-7 rounded-full border border-[#efe8e6] flex items-center justify-center hover:bg-gray-50 active:bg-gray-100 text-[#1c1a19] transition"
+                  disabled={currentYear <= laToday.getFullYear() && currentMonth <= laToday.getMonth()}
+                  className={`w-7 h-7 rounded-full border border-[#efe8e6] flex items-center justify-center text-[#1c1a19] transition ${
+                    currentYear <= laToday.getFullYear() && currentMonth <= laToday.getMonth()
+                      ? "opacity-30 cursor-not-allowed pointer-events-none"
+                      : "hover:bg-gray-50 active:bg-gray-100"
+                  }`}
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
@@ -282,24 +294,32 @@ export default function DateTimeSelectScreen({
 
                 const isSelected = selectedDay === day;
                 const hasDot = dotDays.includes(day);
+                const dayDate = new Date(currentYear, currentMonth, day);
+                const todayMidnight = new Date(laToday.getFullYear(), laToday.getMonth(), laToday.getDate());
+                const isPast = dayDate < todayMidnight;
 
                 return (
                   <button
                     key={`day-${day}`}
+                    disabled={isPast}
                     onClick={() => handleDaySelect(day)}
-                    className="flex flex-col items-center justify-center relative py-0.5 focus:outline-none"
+                    className={`flex flex-col items-center justify-center relative py-0.5 focus:outline-none ${
+                      isPast ? "opacity-30 cursor-not-allowed pointer-events-none" : ""
+                    }`}
                   >
                     <div
                       className={`w-7.5 h-7.5 rounded-full flex items-center justify-center text-xs font-semibold transition ${
                         isSelected
                           ? "bg-[#80140b] text-white font-bold shadow-md transform scale-105"
+                          : isPast
+                          ? "text-gray-300"
                           : "text-[#1c1a19] hover:bg-gray-100"
                       }`}
                     >
                       {day}
                     </div>
                     {/* Tiny popular dot indicator */}
-                    {hasDot && !isSelected && (
+                    {hasDot && !isSelected && !isPast && (
                       <div className="absolute bottom-0 w-1 h-1 bg-[#80140b] rounded-full"></div>
                     )}
                   </button>
