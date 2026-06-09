@@ -33,9 +33,9 @@ export default function ServiceSelectScreen({
   };
 
   return (
-    <div className="bg-[#faf8f6] min-h-screen flex flex-col justify-between text-[#1c1a19] font-sans">
+    <div className="bg-[#faf8f6] min-h-dvh flex justify-center items-center text-[#1c1a19] font-sans">
       {/* Container constrained for mobile scale */}
-      <div className="w-full max-w-[480px] bg-white min-h-screen flex flex-col mx-auto shadow-xl relative overflow-hidden">
+      <div className="w-full max-w-[480px] bg-white h-dvh flex flex-col shadow-xl relative overflow-hidden">
         {/* Top Header */}
         <header className="flex justify-between items-center px-4 py-3.5 border-b border-[#efe8e6] bg-white">
           <button

@@ -37,9 +37,9 @@ export default function CustomerInfoScreen({
   };
 
   return (
-    <div className="bg-[#faf8f6] min-h-screen flex flex-col justify-between text-[#1c1a19]">
+    <div className="bg-[#faf8f6] min-h-dvh flex justify-center items-center text-[#1c1a19] font-sans">
       {/* Container constrained to mobile preview */}
-      <div className="w-full max-w-[480px] bg-white min-h-screen flex flex-col mx-auto shadow-xl relative overflow-hidden">
+      <div className="w-full max-w-[480px] bg-white h-dvh flex flex-col shadow-xl relative overflow-hidden">
         {/* Top Header */}
         <header className="flex justify-between items-center px-4 py-3.5 border-b border-[#efe8e6] bg-white">
           <button
@@ -62,7 +62,7 @@ export default function CustomerInfoScreen({
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 px-6 pt-6 pb-6 flex flex-col justify-between">
+        <main className="flex-1 px-6 pt-6 pb-6 flex flex-col justify-between overflow-y-auto">
           <div className="space-y-4">
             <div className="text-center space-y-1.5">
               <h2 className="font-serif text-3xl font-bold tracking-tight text-[#1c1a19]">
