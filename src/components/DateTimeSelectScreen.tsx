@@ -119,11 +119,11 @@ export default function DateTimeSelectScreen({
     };
     const userId = selectedStylist ? stylistToUserMap[selectedStylist.id] : undefined;
 
-    const startTimestamp = new Date(currentYear, currentMonth, 1, 0, 0, 0).getTime();
-    const endTimestamp = new Date(currentYear, currentMonth, getDaysInMonth(currentYear, currentMonth), 23, 59, 59).getTime();
+    const startStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01`;
+    const endStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(getDaysInMonth(currentYear, currentMonth)).padStart(2, "0")}`;
 
     setLoading(true);
-    let url = `/api/ghl/free-slots?calendarId=${calendarId}&startDate=${startTimestamp}&endDate=${endTimestamp}`;
+    let url = `/api/ghl/free-slots?calendarId=${calendarId}&startDate=${startStr}&endDate=${endStr}`;
     if (userId) {
       url += `&userId=${userId}`;
     }

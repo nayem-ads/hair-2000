@@ -151,6 +151,54 @@ const sendEmailNotification = async (booking: any) => {
   }
 };
 
+// Helper function to calculate exact America/Los_Angeles millisecond timestamp for a date string (YYYY-MM-DD)
+function getLAMilliseconds(dateStr: string, isEnd: boolean): number {
+  try {
+    const timePart = isEnd ? '23:59:59' : '00:00:00';
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const [hour, minute, second] = timePart.split(':').map(Number);
+    
+    // Construct UTC Date
+    const date = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+    
+    // Format as America/Los_Angeles parts
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Los_Angeles',
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+      hour12: false
+    });
+    
+    const parts = formatter.formatToParts(date);
+    const partMap: Record<string, string> = {};
+    parts.forEach(p => { partMap[p.type] = p.value; });
+    
+    const laYear = parseInt(partMap.year);
+    const laMonth = parseInt(partMap.month) - 1;
+    const laDay = parseInt(partMap.day);
+    const laHour = parseInt(partMap.hour);
+    const laMinute = parseInt(partMap.minute);
+    const laSecond = parseInt(partMap.second);
+    
+    const laUTCDate = new Date(Date.UTC(laYear, laMonth, laDay, laHour, laMinute, laSecond));
+    
+    const offset = date.getTime() - laUTCDate.getTime();
+    
+    return date.getTime() + offset;
+  } catch (error) {
+    console.error('Error in getLAMilliseconds helper, falling back to standard PDT offset:', error);
+    const timePart = isEnd ? '23:59:59' : '00:00:00';
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const [hour, minute, second] = timePart.split(':').map(Number);
+    const dateUTC = Date.UTC(year, month - 1, day, hour, minute, second);
+    return dateUTC + 7 * 60 * 60 * 1000; // PDT fallback (-7h)
+  }
+}
+
 // --- API ROUTES ---
 
 // GET: Fetch free slots from GoHighLevel calendar
@@ -161,8 +209,30 @@ app.get('/api/ghl/free-slots', async (req, res) => {
     return res.status(400).json({ error: 'Missing required query parameters calendarId, startDate, or endDate.' });
   }
 
+  let startMs: number;
+  let endMs: number;
+
+  if (typeof startDate === 'string' && startDate.includes('-')) {
+    startMs = getLAMilliseconds(startDate, false);
+  } else {
+    startMs = Number(startDate);
+  }
+
+  if (typeof endDate === 'string' && endDate.includes('-')) {
+    endMs = getLAMilliseconds(endDate, true);
+  } else {
+    endMs = Number(endDate);
+  }
+
+  if (isNaN(startMs)) startMs = Number(startDate);
+  if (isNaN(endMs)) endMs = Number(endDate);
+
+  console.log(`[GHL Slots Request] calendarId: ${calendarId}, userId: ${userId || 'none'}`);
+  console.log(`[GHL Slots Request] Raw inputs -> startDate: ${startDate}, endDate: ${endDate}`);
+  console.log(`[GHL Slots Request] Converted timestamps -> startDate: ${startMs} (${new Date(startMs).toISOString()}), endDate: ${endMs} (${new Date(endMs).toISOString()})`);
+
   const token = process.env.GHL_TOKEN || 'pit-222fd3b0-718a-490f-ba7d-2594c1b7396c';
-  let url = `https://services.leadconnectorhq.com/calendars/${calendarId}/free-slots?startDate=${startDate}&endDate=${endDate}`;
+  let url = `https://services.leadconnectorhq.com/calendars/${calendarId}/free-slots?startDate=${startMs}&endDate=${endMs}&timezone=America/Los_Angeles`;
   if (userId) {
     url += `&userId=${userId}`;
   }
