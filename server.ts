@@ -38,6 +38,7 @@ if (process.env.DATABASE_URL) {
       stylist_role VARCHAR(255) NOT NULL,
       date_str VARCHAR(255) NOT NULL,
       time_slot VARCHAR(255) NOT NULL,
+      lead_source VARCHAR(255),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `).then(() => {
@@ -84,7 +85,7 @@ const sendToZapier = async (booking: any) => {
 
 // Resend Email Notification Helper
 const sendEmailNotification = async (booking: any) => {
-  const resendApiKey = process.env.RESEND_API_KEY || 're_GoVseCMG_DWz7C7xou5EdYjGB8NtVaUrq';
+  const resendApiKey = process.env.RESEND_API_KEY;
   if (!resendApiKey) {
     console.log('RESEND_API_KEY is not set. Skipping email notification.');
     return;
@@ -115,6 +116,10 @@ const sendEmailNotification = async (booking: any) => {
         <tr style="background-color: #ffffff; border-bottom: 1px solid #efe8e6;">
           <td style="padding: 10px; font-weight: bold; font-size: 12px; color: #5c5a59; text-transform: uppercase;">Date & Time</td>
           <td style="padding: 10px; font-size: 14px; color: #1c1a19; text-align: right;"><strong>${booking.dateStr} @ ${booking.timeSlot}</strong></td>
+        </tr>
+        <tr style="background-color: #ffffff; border-bottom: 1px solid #efe8e6;">
+          <td style="padding: 10px; font-weight: bold; font-size: 12px; color: #5c5a59; text-transform: uppercase;">Lead Source</td>
+          <td style="padding: 10px; font-size: 14px; color: #1c1a19; text-align: right;">${booking.leadSource || 'N/A'}</td>
         </tr>
       </table>
       
@@ -198,7 +203,8 @@ app.post('/api/ghl/bookings', async (req, res) => {
     stylistName,
     stylistRole,
     dateStr,
-    timeSlot
+    timeSlot,
+    leadSource
   } = req.body;
 
   if (!calendarId || !startTime || !customerName || !customerPhone) {
@@ -277,14 +283,13 @@ app.post('/api/ghl/bookings', async (req, res) => {
       stylistRole: stylistRole || 'Hair Expert',
       dateStr: dateStr || new Date(startTime).toLocaleDateString(),
       timeSlot: timeSlot || new Date(startTime).toLocaleTimeString(),
+      leadSource: leadSource || '',
       createdAt: new Date().toISOString(),
     };
 
     if (pool) {
       await pool.query(
-        `INSERT INTO bookings 
-         (id, customer_name, customer_phone, service_name, service_price, stylist_name, stylist_role, date_str, time_slot, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        `INSERT INTO bookings \n         (id, customer_name, customer_phone, service_name, service_price, stylist_name, stylist_role, date_str, time_slot, lead_source, created_at)\n         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
         [
           newBooking.id,
           newBooking.customerName,
@@ -295,6 +300,7 @@ app.post('/api/ghl/bookings', async (req, res) => {
           newBooking.stylistRole,
           newBooking.dateStr,
           newBooking.timeSlot,
+          newBooking.leadSource,
           newBooking.createdAt
         ]
       );
@@ -330,6 +336,7 @@ app.get('/api/bookings', async (req, res) => {
         stylistRole: row.stylist_role,
         dateStr: row.date_str,
         timeSlot: row.time_slot,
+        leadSource: row.lead_source || '',
         createdAt: row.created_at
       }));
       return res.json(formatted);
@@ -354,6 +361,7 @@ app.post('/api/bookings', async (req, res) => {
     stylistRole,
     dateStr,
     timeSlot,
+    leadSource,
   } = req.body;
 
   if (!customerName || !customerPhone || !serviceName || !stylistName || !dateStr || !timeSlot) {
@@ -370,15 +378,14 @@ app.post('/api/bookings', async (req, res) => {
     stylistRole,
     dateStr,
     timeSlot,
+    leadSource: leadSource || '',
     createdAt: new Date().toISOString(),
   };
 
   try {
     if (pool) {
       await pool.query(
-        `INSERT INTO bookings 
-         (id, customer_name, customer_phone, service_name, service_price, stylist_name, stylist_role, date_str, time_slot, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        `INSERT INTO bookings \n         (id, customer_name, customer_phone, service_name, service_price, stylist_name, stylist_role, date_str, time_slot, lead_source, created_at)\n         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
         [
           newBooking.id,
           newBooking.customerName,
@@ -389,6 +396,7 @@ app.post('/api/bookings', async (req, res) => {
           newBooking.stylistRole,
           newBooking.dateStr,
           newBooking.timeSlot,
+          newBooking.leadSource,
           newBooking.createdAt
         ]
       );
