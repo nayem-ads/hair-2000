@@ -128,12 +128,14 @@ export default function App() {
     const userId = booking.stylist ? stylistToUserMap[booking.stylist.id] : undefined;
 
     const humanTime = new Date(slot).toLocaleTimeString("en-US", {
+      timeZone: "America/Los_Angeles",
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
     });
 
-    const humanDateStr = date.toLocaleDateString("en-US", {
+    const humanDateStr = new Date(slot).toLocaleDateString("en-US", {
+      timeZone: "America/Los_Angeles",
       weekday: "short",
       month: "short",
       day: "numeric",

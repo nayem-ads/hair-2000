@@ -62,9 +62,9 @@ export default function CustomerInfoScreen({
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 px-6 pt-10 pb-12 flex flex-col justify-between">
-          <div className="space-y-8">
-            <div className="text-center space-y-2">
+        <main className="flex-1 px-6 pt-6 pb-6 flex flex-col justify-between">
+          <div className="space-y-4">
+            <div className="text-center space-y-1.5">
               <h2 className="font-serif text-3xl font-bold tracking-tight text-[#1c1a19]">
                 Get Started
               </h2>
@@ -75,13 +75,13 @@ export default function CustomerInfoScreen({
 
             {/* Error badge */}
             {error && (
-              <div className="bg-[#ffdad6] text-[#80140b] text-xs font-bold py-2.5 px-4 rounded-lg text-center">
+              <div className="bg-[#ffdad6] text-[#80140b] text-xs font-bold py-2 px-4 rounded-lg text-center">
                 {error}
               </div>
             )}
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
               {/* Name Field */}
               <div className="space-y-1">
                 <label
@@ -96,7 +96,7 @@ export default function CustomerInfoScreen({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Jane Doe"
-                  className="w-full border-b border-[#efe8e6] focus:border-[#80140b] py-3 px-4 outline-none transition-all text-sm bg-[#faf8f6] rounded-t-lg font-medium"
+                  className="w-full border-b border-[#efe8e6] focus:border-[#80140b] py-2.5 px-4 outline-none transition-all text-sm bg-[#faf8f6] rounded-t-lg font-medium"
                   required
                 />
               </div>
@@ -115,16 +115,16 @@ export default function CustomerInfoScreen({
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+1 (555) 000-0000"
-                  className="w-full border-b border-[#efe8e6] focus:border-[#80140b] py-3 px-4 outline-none transition-all text-sm bg-[#faf8f6] rounded-t-lg font-medium"
+                  className="w-full border-b border-[#efe8e6] focus:border-[#80140b] py-2.5 px-4 outline-none transition-all text-sm bg-[#faf8f6] rounded-t-lg font-medium"
                   required
                 />
               </div>
 
-              {/* Push button to bottom */}
-              <div className="pt-12">
+              {/* Push button right under fields */}
+              <div className="pt-6">
                 <button
                   type="submit"
-                  className="w-full bg-[#80140b] text-white py-4 px-6 rounded-lg font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-2 hover:bg-[#680f08] transition-colors shadow-md"
+                  className="w-full bg-[#80140b] text-white py-3.5 px-6 rounded-lg font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-2 hover:bg-[#680f08] transition-colors shadow-md"
                 >
                   <span>Continue</span>
                   <ArrowRight className="w-4 h-4" />
@@ -134,7 +134,7 @@ export default function CustomerInfoScreen({
           </div>
 
           {/* Bottom Watermark Footer */}
-          <footer className="text-center pt-8 border-t border-[#efe8e6]">
+          <footer className="text-center pt-4 border-t border-[#efe8e6]">
             <p className="text-[9px] font-bold tracking-[0.2em] text-[#7d7977] uppercase">
               © Hair 2000. Est. 1991
             </p>

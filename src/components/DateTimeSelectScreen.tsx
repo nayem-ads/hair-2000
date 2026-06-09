@@ -150,17 +150,33 @@ export default function DateTimeSelectScreen({
       });
   }, [currentMonth, currentYear, selectedService, selectedStylist]);
 
-  // Helper to format ISO slot string to 12-hour format
+  // Helper to format ISO slot string to 12-hour format strictly in America/Los_Angeles timezone
   const formatSlotTime = (isoString: string) => {
     try {
       const date = new Date(isoString);
       return date.toLocaleTimeString("en-US", {
+        timeZone: "America/Los_Angeles",
         hour: "numeric",
         minute: "2-digit",
         hour12: true,
       });
     } catch (e) {
       return isoString;
+    }
+  };
+
+  // Helper to extract slot hour in America/Los_Angeles timezone
+  const getLAHour = (isoString: string): number => {
+    try {
+      const date = new Date(isoString);
+      const formatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/Los_Angeles",
+        hour: "numeric",
+        hour12: false,
+      });
+      return parseInt(formatter.format(date));
+    } catch (e) {
+      return new Date(isoString).getHours();
     }
   };
 
@@ -177,13 +193,11 @@ export default function DateTimeSelectScreen({
   const daySlots = slotsByDate[formattedDate]?.slots || [];
 
   const morningSlots = daySlots.filter((slotStr) => {
-    const date = new Date(slotStr);
-    return date.getHours() < 12;
+    return getLAHour(slotStr) < 12;
   });
 
   const afternoonSlots = daySlots.filter((slotStr) => {
-    const date = new Date(slotStr);
-    return date.getHours() >= 12;
+    return getLAHour(slotStr) >= 12;
   });
 
   return (
