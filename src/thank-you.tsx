@@ -14,45 +14,53 @@ function ThankYouPage() {
     const params = new URLSearchParams(window.location.search);
     const bookingId = params.get('id');
 
-    // 2. Fetch history and look for current booking
-    fetch('/api/bookings')
-      .then((res) => {
-        if (!res.ok) throw new Error('API failed');
-        return res.json();
-      })
-      .then((data: HistoricBooking[]) => {
-        setHistoryCheckouts(data);
-        localStorage.setItem('hair_2000_appointments', JSON.stringify(data));
+    // 2. Load history from local storage first
+    let localHistory: HistoricBooking[] = [];
+    try {
+      const stored = localStorage.getItem('hair_2000_appointments');
+      if (stored) {
+        localHistory = JSON.parse(stored);
+        setHistoryCheckouts(localHistory);
+      }
+    } catch (e) {
+      console.error('Failed to load local storage appointments', e);
+    }
 
-        if (bookingId) {
-          const matched = data.find((b) => b.id === bookingId);
+    // 3. Fetch current booking details if ID is present
+    if (bookingId) {
+      fetch(`/api/bookings/${bookingId}`)
+        .then((res) => {
+          if (!res.ok) throw new Error('Failed to fetch booking');
+          return res.json();
+        })
+        .then((data: HistoricBooking) => {
+          // Resolve current booking display
+          resolveBooking(data);
+
+          // Update local history checkouts with the fetched booking details
+          const exists = localHistory.some((b) => b.id === data.id);
+          let updatedHistory = localHistory;
+          if (exists) {
+            updatedHistory = localHistory.map((b) => (b.id === data.id ? data : b));
+          } else {
+            updatedHistory = [data, ...localHistory];
+          }
+          setHistoryCheckouts(updatedHistory);
+          localStorage.setItem('hair_2000_appointments', JSON.stringify(updatedHistory));
+        })
+        .catch((err) => {
+          console.warn('API error, using local storage fallbacks:', err);
+          // Look for matched booking in local history
+          const matched = localHistory.find((b) => b.id === bookingId);
           if (matched) {
             resolveBooking(matched);
-            return;
+          } else {
+            checkFallback(bookingId);
           }
-        }
-        checkFallback(bookingId);
-      })
-      .catch((err) => {
-        console.warn('API error, using local storage fallbacks:', err);
-        try {
-          const stored = localStorage.getItem('hair_2000_appointments');
-          if (stored) {
-            const list = JSON.parse(stored);
-            setHistoryCheckouts(list);
-            if (bookingId) {
-              const matched = list.find((b: any) => b.id === bookingId);
-              if (matched) {
-                resolveBooking(matched);
-                return;
-              }
-            }
-          }
-          checkFallback(bookingId);
-        } catch (e) {
-          console.error(e);
-        }
-      });
+        });
+    } else {
+      checkFallback(bookingId);
+    }
   }, []);
 
   const checkFallback = (bookingId: string | null) => {

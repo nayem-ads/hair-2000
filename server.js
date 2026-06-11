@@ -353,6 +353,42 @@ app.get("/api/bookings", async (req, res) => {
     res.status(500).json({ error: "Failed to retrieve bookings" });
   }
 });
+app.get("/api/bookings/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (pool) {
+      const result = await pool.query("SELECT * FROM bookings WHERE id = $1", [id]);
+      if (result.rows.length > 0) {
+        const row = result.rows[0];
+        const formatted = {
+          id: row.id,
+          customerName: row.customer_name,
+          customerPhone: row.customer_phone,
+          serviceName: row.service_name,
+          servicePrice: Number(row.service_price),
+          stylistName: row.stylist_name,
+          stylistRole: row.stylist_role,
+          dateStr: row.date_str,
+          timeSlot: row.time_slot,
+          createdAt: row.created_at
+        };
+        return res.json(formatted);
+      } else {
+        return res.status(404).json({ error: "Booking not found." });
+      }
+    } else {
+      const found = fallbackBookings.find((b) => b.id === id);
+      if (found) {
+        return res.json(found);
+      } else {
+        return res.status(404).json({ error: "Booking not found." });
+      }
+    }
+  } catch (error) {
+    console.error("Error fetching booking by ID:", error);
+    res.status(500).json({ error: "Failed to retrieve booking" });
+  }
+});
 app.post("/api/bookings", async (req, res) => {
   const {
     id,

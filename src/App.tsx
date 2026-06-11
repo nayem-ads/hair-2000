@@ -30,28 +30,16 @@ export default function App() {
   // History list from local storage
   const [historyList, setHistoryList] = useState<HistoricBooking[]>([]);
 
-  // Load from API with local storage fallback
+  // Load from local storage on mount
   useEffect(() => {
-    fetch("/api/bookings")
-      .then((res) => {
-        if (!res.ok) throw new Error("API failed");
-        return res.json();
-      })
-      .then((data) => {
-        setHistoryList(data);
-        localStorage.setItem("hair_2000_appointments", JSON.stringify(data));
-      })
-      .catch((err) => {
-        console.warn("Could not sync with API, using local storage fallback:", err);
-        try {
-          const stored = localStorage.getItem("hair_2000_appointments");
-          if (stored) {
-            setHistoryList(JSON.parse(stored));
-          }
-        } catch (e) {
-          console.error("Failed to load local storage appointments", e);
-        }
-      });
+    try {
+      const stored = localStorage.getItem("hair_2000_appointments");
+      if (stored) {
+        setHistoryList(JSON.parse(stored));
+      }
+    } catch (e) {
+      console.error("Failed to load local storage appointments", e);
+    }
   }, []);
 
   // Sync to local storage on changes
