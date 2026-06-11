@@ -130,7 +130,7 @@ const sendEmailNotification = async (booking: any) => {
     // Resend sandbox constraint: if sending from onboarding@resend.dev, we can only send to the registered owner (nayem.adsmanager@gmail.com)
     const toEmails = fromEmail.includes('onboarding@resend.dev') 
       ? ['nayem.adsmanager@gmail.com'] 
-      : ['admin@velociholdings.com', 'nayem.adsmanager@gmail.com'];
+      : ['hello@velociholdings.com', 'nayem.adsmanager@gmail.com'];
 
     console.log(`Sending booking notification email to Resend... (From: ${fromEmail}, To: ${toEmails.join(', ')})`);
     const response = await fetch('https://api.resend.com/emails', {

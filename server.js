@@ -109,7 +109,7 @@ var sendEmailNotification = async (booking) => {
   `;
   try {
     const fromEmail = process.env.RESEND_FROM_EMAIL || "Hair 2000 <onboarding@resend.dev>";
-    const toEmails = fromEmail.includes("onboarding@resend.dev") ? ["nayem.adsmanager@gmail.com"] : ["admin@velociholdings.com", "nayem.adsmanager@gmail.com"];
+    const toEmails = fromEmail.includes("onboarding@resend.dev") ? ["nayem.adsmanager@gmail.com"] : ["hello@velociholdings.com", "nayem.adsmanager@gmail.com"];
     console.log(`Sending booking notification email to Resend... (From: ${fromEmail}, To: ${toEmails.join(", ")})`);
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
