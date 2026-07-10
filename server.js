@@ -1,7 +1,11 @@
 // server.ts
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 import express from "express";
 import path from "path";
 import dotenv from "dotenv";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 import { Pool } from "pg";
 import { fileURLToPath } from "url";
 var __filename = fileURLToPath(import.meta.url);
